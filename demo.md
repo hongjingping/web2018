@@ -1,0 +1,457 @@
+# 总结
+## 1.移动电商系统
+    1. 技术: Vue+Router+Vant+Node+Koa2+Mongoose+MongoDB
+    2. 全部内容: 从零开始搭建一个移动电商系统，包括首页展示，类别展示，购物功能，注册登录，积分系统，查找页面，后台接口设置。
+    3. 过程:
+        1. vue-cli搭建前端开发环境
+        2. 安装babel-plugin-import，按需引入引入vant的组件模块，并且不用管理我们的样式。只需要在.babelrc中配置plugins
+            ```
+            "plugins": [
+                "transform-vue-jsx",
+                "transform-runtime",
+                ["import",{"libraryName":"vant","style":true}]
+              ]
+            ```
+        3. 适配移动端布局，采用rem。rem是相对长度单位，相对于根元素（即html元素）font-size计算值的倍数。
+            1. 适配原理：将px替换成rem，动态修改html的font-size适配。它可以很好的根据根元素的字体大小来进行变化，从而达到各种屏幕基本一直的效果体验。
+            2. 在作移动端页面适配时，一般我们不希望用户自己缩放页面大小，我们可以在index.html的meta标签进行设置，加入user-scalable=no。
+    4. 首页路由的配置
+    5. icon用的是阿里的iconfont图标库，轮播图用Vant中swipe组件
+    6. 用easyMock进行mock数据，Axios调用数据
+        ```
+        created(){
+            axios({
+                url: '...',
+                method: 'get',
+            })
+            .then(response => {
+                console.log(response)
+            })
+            .catch((error) => {
+            })
+        }
+        ```
+    7. 布局使用flex布局
+    8. watch的使用
+    9. Filter的使用
+    10. 后台服务接口配置文件serviceAPI.config.js
+    11. 安装koa2和mongoDB，mongoDB的默认端口是27017。图形界面使用Robo3管理。Koa用Mongoose连接数据库，Mongoose是一个开源的封装好的实现Node和MongoDB数据通讯的数据建模库。Mongoose的Schema建模介绍。
+    12. 用户密码加密机制: bcrypt。
+    13. Koa2的用户操作的路由模块化:koa-router。
+    14. 打通注册用户的前后端通讯koa-bodyparser中间件。支持跨域koa2-cors中间件。
+    15. 放重复提交: 在按钮上绑定loading属性,注册时候前端先验证，登录时候前端的数据存储localStroge
+    16. 商品详细数据提纯操作，使用node的fs模块`fs.readFile()`，可以轻松把文件读取到程序中.
+    17. 解决图片有空隙问题:只要把字体设置为0就好，但是这样是有弊端的，就是以后如果有图文混排就会出现不显示字体的BUG。所以最好的解决方案是后端插入的时候就取消掉空格。
+    18. 下拉刷新和上拉加载和Tab动态切换制作。
+    ```
+    overflow: scroll;
+    mounted(){
+        let winHeight = document.documentElement.clientHeight
+        document.getElementById('leftNav').style.height=winHeight-46 +'px'
+        document.getElementById('list-div').style.height=winHeight-90 +'px'
+    },
+    ```
+    19. 商品列表页编程式导航的制作
+    ```
+    goGoodsInfo(id){
+        this.$router.push({name:'Goods',params:{goodsId:id}})
+    }
+    ```
+    20. 页面的参数接收改造。
+        1. params传参，路径不能使用path，只能使用name，不然取不到传的数据，取数据时用params获取。
+        2. query传参，用的是path，而不是name,否则也会出错，取数据使用query。
+    21. 底部导航栏用keep-alive优化。
+
+---
+##  2.vue方法与属性总结
+### 1. watch
+1. watch是一个对象，一定要当成对象来用。键：就是你要监控的那个家伙，比如说$route，这个就是要监控路由的变化。或者是data中的某个变量。值可以是函数、函数名、包括选项的对象。
+```
+<template>
+  <div>
+    <!-- 观察对象是字符串或者数组 -->
+    <input v-model="example0">
+    <input v-model="example1">
+    <!-- 当观察数据是对象时，键值发生变化的时候，为了监听到数据变化，需要添加deep: true -->
+    <input v-model="example2.inner0">
+  </div>
+</template>
+
+<script>
+  export default {
+    data() {
+      return {
+        example0: '',
+        example1: '',
+        example2: {
+          inner0: 1,
+          inner1: 2
+        }
+      }
+    },
+    watch: {
+      example0 (curVal, oldVal) {
+        console.log(curVal, oldVal);
+      },
+      example1: 'a', // 值为methods的方法名
+      example2: {
+        // 当观察的数据是对象或者数组的时候，curVal和oldVal的值是相等的，因为这两个形参指向同一个对象
+        handler (curVal, oldVal) {
+          console.log(curVal, oldVal);
+        },
+        deep: true
+      }
+    },
+    methods: {
+      a (curVal, oldVal) {
+        console.log(curVal, oldVal);
+      }
+    }
+  }
+</script>
+
+<style scoped>
+
+</style>
+
+```
+2. watch有一个特点，就是当值第一次绑定的时候，不会执行监听函数，只有值发生改变才会执行。如果想要在最初绑定值的时候也执行函数，则就需要用到==immediate==属性。比如当父组件向子组件动态传值时，子组件props首次获取到父组件传来的默认值时，也需要执行函数，此时就需要将immediate设为true。监听的数据后面写成对象形式，包含handler方法和immediate，之前我们写的函数其实就是在写这个handler方法；immediate表示在watch中首次绑定的时候，是否执行handler，值为true则表示在watch中声明的时候，就立即执行handler方法，值为false，则和一般使用watch一样，在数据发生变化的时候才执行handler。==deep==指的是当需要监听一个对象的改变时，普通的watch方法无法监听到对象内部属性的改变，只有data中的数据才能够监听到变化，此时就需要deep属性对对象进行深度监听。数组（一维、多维）的变化不需要通过深度监听，对象数组中对象的属性变化则需要deep深度监听。
+### 2.Filter
+1. 全局过滤器
+```
+Vue.filter('capitalize', function (value) {
+  if (!value) return ''
+  value = value.toString()
+  return value.charAt(0).toUpperCase() + value.slice(1)
+})
+```
+2. 实例化内部的过滤器
+```
+<div id="app">
+    <input type="text" v-model="msg">
+    <p>{{ msg | capitalize }}</p>
+</div>
+var vm = new Vue({
+  el: '#app',
+  data: {
+    msg: ''
+  },
+  filters: {
+    capitalize (val) {
+      if (!val) return
+      val = val.toString()
+      return val.charAt(0).toUpperCase() + val.slice(1)
+    }
+  }
+})
+```
+### 3.计算属性中的Getter和Setter
+
+```
+<p>{{ fullName }}</p>
+computed: {
+    fullName: {
+      get () {
+        return this.FirstName + ' ' + this.LastName;
+      },
+      set (val) {
+        var arr = val.split('');
+        this.FirstName = arr[0];
+        this.LastName = arr[1];
+      }
+    }
+},
+```
+1. get用来获取值，同时计算生成新的属性值
+2. set用来改变传递过来的值，发生改变的时候，同时让数据的内容也发生改变。
+### 4.对于MVVM的理解
+1. MVVM: Model-View-ViewModel的缩写
+2. Model代表数据模型，可以再Model中定义数据修改和操作的业务逻辑
+3. View代表UI组件，负责将数据模型转成UI展示出来
+4. VIewModel监听模型数据的改变和控制视图行为、处理用户交互，可以理解为一个同步Model和View的对象，连接Model和View。
+5. 在MVVM架构下，View和Model之间没有直接的联系，而是通过ViewModel进行交互，Model和ViewModel之间的交互是双向的，因为View数据的变化会同步到Model中，而Model上数据的变化也会同步反应到View上。
+6. ViewModel通过双向数据绑定把View层和Model层连接起来，而View层和Model层之间的同步工作完全是自动的，无需人为干涉。开发者只需要关注业务逻辑，不需要手动操作Dom，也不需要关注数据状态的同步问题，复杂的数据状态维护完全由MVVM统一管理。
+### 5.Vue的生命周期
+1. beforeCreate(创建前) 数据观测和初始化事件还没有开始
+2. created(创建后)完成数据观测、属性和方法的运算，初始化事件，$el属性还没有显示出来
+3. beforeMount(载入前)在挂载开始之前被调用，相关的render函数首次被调用。实例已完成以下的配置：编译模板，把data里面的数据和模板生成html。此时没有挂在html到页面上
+4. mounted(载入后)在el被新创建的vm.$el替换，并挂载到实例上去之后调用。实例已完成以下的配置：用上面编译好的html内容替换el属性指向的DOM对象。完成模板中的html渲染到html页面上。此过程进行ajax交互。
+5. beforeUpdate(更新前)数据更新之前进行调用，发生在虚拟DOM重新渲染和打补丁之前，可以在该钩子函数中进一步更改状态，不会触发附加的重渲染过程。
+6. updated(更新后)在由于数据更改导致的虚拟DOM重新渲染和打补丁之后调用。调用时，组件DOM已经更新，所以可以执行依赖于DOM的操作，然而在大多数情况下，应该避免在此阶段更改状态，因为这可能会导致更新无限循环，该钩子在服务器端渲染期间不会被调用。
+7. beforeDestory(销毁前)在实例销毁之前调用，实例任然可以使用。
+8. destoryed(销毁后)在实例销毁之后调用，调用后，所有的事件监听器会被移除，所有的子实例也会被销毁。该钩子在服务器端渲染的时候不会被调用。
+
+---
+9. 什么是vue的生命周期？
+    1. vue的实例从创建到销毁的过程就是vue的生命周期。从开始创建、初始化数据、编译模板、挂载DOM-渲染、更新-渲染、销毁等一系列过程，称之为vue的生命周期。
+10. vue生命周期的作用？
+    1. 它的生命周期中有多个事件钩子，让我们在控制整个Vue实例的过程时更容易行成好的逻辑
+11. vue生命周期共有多少个阶段？
+    1. 8个阶段：创建前/后,载入前/后,更新前/后,销毁前/后
+12. 第一次页面加载会触发哪几个钩子？
+    1. beforeCreat、created、beforeMount、mounted
+13. DOM渲染是在那个过程完成的？
+    1. DOM渲染是在mounted过程完成的。
+
+---
+### 6.Vue实现数据双向绑定的原理: Object.defineProperty()
+1. vue实现数据双向绑定主要是：采用数据劫持结合发布者-订阅者模式的方式。通过Object.defineProperty()来劫持各个属性的setter，getter。在数据变动时发布消息给订阅者，触发相应监听回调。当把一个普通的js对象传递给vue实例来作为他的data选项时，vue将遍历它的属性，用Object.defineProperty将他们转为getter/setter。用户看不到getter/setter，但是在他们内部让vue追踪依赖，在属性被访问和修改时通知变化。
+2. vue的数据双向绑定，将MVVM作为数据绑定的入口，整合Observer，Compile，Watcher三者。通过Observer来监听自己的Model的数据变化，通过Compile来解析编译模板指令，最红利用Watcher来搭起Observer 和 Compile之间的通信桥梁，达到数据变化-视图更新，视图交互变化-数据变更双向绑定效果。
+```
+<body>
+    <div id="app">
+    <input type="text" id="txt">
+    <p id="show"></p>
+</div>
+</body>
+<script type="text/javascript">
+    var obj = {}
+    Object.defineProperty(obj, 'txt', {
+        get: function () {
+            return obj
+        },
+        set: function (newValue) {
+            document.getElementById('txt').value = newValue
+            document.getElementById('show').innerHTML = newValue
+        }
+    })
+    document.addEventListener('keyup', function (e) {
+        obj.txt = e.target.value
+    })
+</script>
+```
+### 7.Vue组件之间参数的传递
+1. 父子组件之间的传值
+    1. 父组件传给子组件：子组件通过props的方式接收数据
+    2. 子组件传给父组件：$emit方法传递参数
+2. 非父子组件之间的传值，兄弟组件传值
+    1. eventBus，就是创建一个事件中心，相当于中转站，可以用它来传递事件和接收事件，项目比较小的时候适合用eventBus。大项目推荐vuex，直接进行状态管理。
+### 8.Vue路由的实现: hash模式和history模式
+1. hash模式：在浏览器中符号'#','#'以及'#'后面的字符称之为hash，用window.location.hash读取。
+    1. 优点：hash虽然在URL中，但是不被包括在http请求中，用来指导浏览器操作，对服务端安全无用，hash不会重加载页面。
+    2. 缺点：
+2. history模式：采用html5新特性，且提供两个方法: pushState()和replaceState(),可以对浏览器的历史记录栈进行修改，以及popState事件的监听到状态的修改。
+### 9.Vue和Angular、React的区别？
+### 10. Vue路由的钩子函数
+1. 首页可以控制导航跳转，beforeEach、afterEach等，一般用于页面title的修改。一些需要登录才能调整页面的重定向功能。beforeEach有3个参数to，from，next
+    1. to: route即将进入的目标路由对象
+    2. from: route当前导航正要离开的路由
+    3. next: function一定要调用该方法resolve这个钩子，执行效果依赖next方法的调用参数，可以控制网页的跳转。
+### 11.vuex是什么？怎么使用？哪种功能场景使用它？
+1. 只用来读取的状态集中放在store中
+2. 改变状态的方式是提交mutations，这个是同步的事物
+3. 异步逻辑应该封装早action中
+4. 在main.js中引入store，注入。新建一个store，...export
+5. 场景：单页应用中，组件之间的状态，音乐播放、登录状态、加入购物车
+6. state：Vuex使用单一状态树，即每个应用将仅仅包含一个store实例，但单一状态树和模块化并不冲突。存放的数据状态，不可以直接修改里面的数据。
+7. mutations：mutatiions定义的方法动态的修改Vuex的store中的状态和数据。
+8. getters：类似vue的计算属性，用于过滤一些数据。
+9. actions：通过将mutations里面处理数据的方法变成可异步的处理数据的方法，简单来说就是异步操作数据，view层通过store.dispath来分发action
+10. modules：项目复杂的时候，可以让每一个模块都拥有state、mutation、action、getter，使得结构清晰，易于管理。
+### 12.vue-cli如何新增自定义指令？
+1. 创建局部指令
+    ```
+    var app = new Vue({
+        el: '#app',
+        data: {},
+        <!--创建指令-->
+        directives: {
+            <!--指令名称-->
+            dir1: {
+                inserted (el) {
+                    <!--指令中第一个参数是当前使用指令的DOM-->
+                    console.log(el);
+                    console.log(arguments);
+                    <!--对DOM进行操作-->
+                    el.style.width = '200px';
+                    el.style.height = '200px';
+                }
+            }
+        }
+    })
+    ```
+2. 创建全局指令
+    ```
+    Vue.directives('dir2', {
+        inserted (el) {
+            console.log(el);
+        }
+    })
+    ```
+3. 指令的使用
+    ```
+    <div id='app'>
+        <div v-dir1></div>
+        <div v-dir2></div>
+    </div>
+    ```
+### 13.对keep-alive的理解
+1. keep-alive是vue内置的一个组件，可以使被包含的组件保持状态，或者避免重新渲染。
+2. vue2.1.0版本之后，keep-alive加入两个参数:include(包含的组件缓存)和exclude(排除的组件不缓存，优先级大于include)
+```
+<keep-alive include='include_components' exclude='exclude_components'>
+  <component>
+    <!-- 该组件是否缓存取决于include和exclude属性 -->
+  </component>
+</keep-alive>
+```
+3. include - 字符串或正则表达式，只有名称匹配的组件会被缓存；exclude - 字符串或正则表达式，任何名称匹配的组件都不会被缓存；include 和 exclude 的属性允许组件有条件地缓存。二者都可以用“，”分隔字符串、正则表达式、数组。当使用正则或者是数组时，要记得使用v-bind
+
+---
+### 14.一句话就能回答的题
+##### 1. css只在当前组件起作用？
+1. 在style的标签中写入scoped即可。
+##### 2. v-if 和 v-show 区别
+1. v-if按照条件是否渲染，v-show是display的block或none；
+##### 3. $route和$router的区别
+1. $route是“路由信息对象”，包括path，params，hash，query，fullPath，matched，name等路由信息参数。而$router是“路由实例”对象包括了路由的跳转方法，钩子函数等。
+##### 4. vue.js的两个核心是什么？
+1. 数据驱动和组件系统
+##### 5. vue几种常用的指令？
+1. v-if、v-bind、v-on、v-for、v-show、v-else、v-model
+##### 6. vue常用的修饰符？
+1. .prevent: 提交事件不在重载页面
+2. .stop: 阻止单击事件冒泡
+3. .self: 当事件发生在该元素本身而不是在子元素的时候触发
+4. .capture: 事件侦听，事件发生的时候调用
+##### 7. v-on 可以绑定多个方法吗？
+1. 可以
+##### 8. vue中 key 值的作用？
+1. 当vue.js用v-for正在更新已渲染过的元素列表时，它默认用‘就地复用’策略。如果数据项的顺序被改变，vue将不会移动dom元素来匹配数据项的顺序。而是简单复用此处每个元素。并且确保他在特定索引下显示已被渲染过的每个元素。key的作用是为了高效的更新虚拟DOM。
+##### 9. 什么是vue的计算属性？
+1. 在模板中放入太多的逻辑会让模板过重且难以维护，在需要对数据进行复杂处理，且可能多次使用的情况下，尽量采取计算属性的方式。
+2. 优点：
+    1. ①使得数据处理结构清晰；
+    2. ②依赖于数据，数据更新，处理结果自动更新；
+    3. ③计算属性内部this指向vm实例；
+    4. ④在template调用时，直接写计算属性名即可；
+    5. ⑤常用的是getter方法，获取数据，也可以使用set方法改变数据；
+    6. ⑥相较于methods，不管依赖的数据变不变，methods都会重新计算，但是依赖数据不变的时候computed从缓存中获取，不会重新计算。
+##### 10. vue等单页面应用及其优缺点
+1. 优点：Vue 的目标是通过尽可能简单的 API 实现响应的数据绑定和组合的视图组件，核心是一个响应的数据绑定系统。MVVM、数据驱动、组件化、轻量、简洁、高效、快速、模块友好。
+2. 缺点：不支持低版本的浏览器，最低只支持到IE9；不利于SEO的优化（如果要支持SEO，建议通过服务端来进行渲染组件）；第一次加载首页耗时相对长一些；不可以使用浏览器的导航按钮需要自行实现前进、后退。
+---
+### 15. mvvm和mvc区别？
+1. MVC和MVVM其实区别并不大，都是一种设计思想。主要是MVC中的controller演变为MVVM中的ViewModel。MVVM主要解决了MVC中的大量的DOM操作使页面渲染性能降低，加载速度变慢，影响用户体验。
+### 16. vue如何实现按需加载配合webpack设置?
+```
+webpack中提供了require.ensure()来实现按需加载。以前引入路由是通过import 这样的方式引入，改为const定义的方式进行引入。
+不进行页面按需加载引入方式：import  home   from '../../common/home.vue'
+进行页面按需加载的引入方式：const  home = r => require.ensure( [], () => r (require('../../common/home.vue')))
+```
+### 17. 路由之间跳转？
+1. 声明式(标签跳转)：`<router-link :to="index">	`
+2. 函数式(js跳转): `router.push('index')`
+### 18. 组件的使用和自己创建公用组件？
+1. 在components目录新建你的组件文件（indexPage.vue），script一定要export default {}
+2. 在需要用的页面（组件）中导入：import indexPage from '@/components/indexPage.vue'
+3. 注入到vue的子组件的components属性上面,components:{indexPage}
+4. 在template视图view中使用
+
+---
+## 3.ES6总结
+### 1. 箭头函数需要注意的地方
+1. 当要求动态上下文的时候，就不能够使用箭头函数。也就是this的固定化
+2. 在使用=>定义函数的时候，this的指向是定义时所在的对象，而不是使用时所在的对象
+3. 不能够用作构造函数，这就是说，不能够使用new命令，否则就会抛出一个错误
+4. 不能够使用arguments对象
+5. 不能使用yield命令
+### 2. ES6 let、const
+1. let是更完美的var，不是全局变量，具有块级函数作用域,大多数情况不会发生变量提升。
+  1. let声明的变量具有块级作用域
+  2. let声明的变量不能通过window.变量名进行访问
+  3. 形如for(let x..)的循环是每次迭代都为x创建新的绑定
+2. const定义常量值，不能够重新赋值，如果值是一个对象，可以改变对象里边的属性值。
+### 3. set数据结构
+1. Set本身是一个构造函数，它类似于数组，但是成员值都是唯一的
+  ```
+  const set = new Set([1,2,3,4,4])
+  [...set] // [1,2,3,4]
+  Array.from(new Set())是将set进行去重
+  ```
+### 4. promise对象的用法,手写一个promise
+  ```
+  var promise = new Promise((resolve, reject) => {
+    if (success) {
+      resolve(val)
+    } else {
+      reject(err)
+    }
+  })
+  promise.then((val) => {
+    <!-- success -->
+  }, () => {
+    <!-- err -->
+  })
+  ```
+### 5. class的理解
+1. class语法相对原型、构造函数、继承更接近传统语法，它的写法能够让对象原型的写法更加清晰、面向对象编程的语法更加通俗.
+  ```
+  class Animal {
+    constructor () {
+      this.type = 'animal'
+    }
+    says (say) {
+      console.log(this.type + 'says' + say )
+    }
+  }
+  let animal = new Animal()
+  animal.says('hello')
+
+  class Cat extends Animal {
+    constructor () {
+      super()
+      this.type = 'cat'
+    }
+  }
+  let cat = new Cat()
+  cat.says('hello')
+  ```
+2. 可以看出extends的时候结构输出的cat says hello而不是animal says hello。说明constructor内部定义的属性和方法是实例对象自己的，不能通过extends进行继承。在class cat中出现了super(),这是什么呢？在ES6中，子类构造函数必须含有super函数，super表示的是调用父类的构造函数，虽然是父类的构造函数，但是this指向确是cat。
+3. Object.assign(),`var n = Object.assign(a,b,c) // 向n中添加a, b, c属性`
+### 6. 模版语法的理解
+1. 就是这种形式${varible},在以往的时候我们在连接字符串和变量的时候需要使用这种方式'string' + varible + 'string'但是有了模版语言后我们可以使用string${varible}string这种进行连接
+### 7. rest参数
+1. es6引入rest参数，用于获取函数的多余参数，这样就不需要使用arguments对象了
+  ```
+  function add (...values) {
+    let sum = 0
+    for (var val of values) {
+      sum += val
+    }
+    return sum
+  }
+  ```
+### 8. module体系
+1. 历史上js是没有module体系，无法将一个大程序拆分成一些小的程序。在es6之前，有commonJs,AMD两种CommonJS是如何书写的呢
+2. ConmonJS是如何书写的呢
+  ```
+  const animal = require('./content.js)
+    <!-- content.js -->
+    module.exports = 'a cat'
+  ```
+3. require.js是这样做的
+  ```
+  <!-- content.js -->
+  define('content.js', function () {
+    return 'A cat'
+  })
+
+  require(['./content.js'], function (animal) {
+    console.log(animal)
+  })
+  ```
+4. ES6
+  ```
+  import animal from './content.js'
+  <!-- content.js -->
+  export default 'a cat'
+  ```
+5. ES6 import的其他用法
+  1. 在vue中可以`import animal from './content.js'`
+  2. animal这个值可以根据你的喜欢而改变，但是有一个问题就是如果一旦引入的是函数或者变量时，你就必须和content中的名字保持一致，可以参照`import { say, type } from './content'`
+  3. 常用的还有一种写法`import * as content from './content'`,这种写法就是表示所有的输出值都在这个对象上
+
+
+
+
