@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+  <script>
+    let c = (a, b) => a + b;
+    console.log(c(1,12));
+
+    // ES5
+    "use strict"
+    var c = function c(a, b) {
+      return a + b;
+    };
+    console.log(c(1, 12));
+
+    // 返回对象时的写法
+    let c = (a, b) => {a = a + b; return a--};
+    let c = (a, b) => ({a:a});
+    let c = (a, b) => {return {a:a}};
+   
+    // ES5
+    function Person(age) {
+      var _this = this;
+      this.age = age;
+      setTimeout(function growUp() {
+        console.log(this);
+        _this.age++
+      }, 1000)
+    }
+    var p = new Person(26)
+
+    // ES6
+    function Person(age) {
+      this.age = age;
+      setTimeout(() => {
+        console.log(this);
+        this.age++
+      }, 1000)
+      console.log(this.age)
+    }
+    var p = new Person(26)
+
+    var obj = {}
+    function foo(num1, num2) {
+      console.log(num1, num2)
+      console.log(this)
+    }
+    foo(1,2); // this指向window
+    foo.call(obj, 3, 4);  // call可以有无数个参数
+    Person.call(this, name, age) // 让任意函数成伟任意对象的方法
+    foo.apply(obj, [5,6]) // apply的第二个参数是数组
+    foo.bind(obj, 7, 8)()
+    obj.fn.call(obj2)
+    setTimeout (function () {
+      console.log(this)
+    }.bind(obj), 1000) 
+
+    function foo (n) {
+      var f = (...args) => args[0] + args.length;
+      return f(n)
+    }
+    foo(1); // 1
+  </script>
+</body>
+</html>
