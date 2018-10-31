@@ -65,6 +65,27 @@
       return f(n)
     }
     foo(1); // 1
+
+    // class类
+    class Animal {
+      constructor () {
+        this.type = 'dog';
+      }
+      say (say) {
+        console.log(say)
+      }
+    }
+    let animal = new Animal()
+    animal.say('hello');
+
+    class Cat extends Animal {
+      constructor () {
+        super();
+        this.type = cat;
+      }
+    }
+    let cat = new Cat();
+    cat.say('hello wikiHong');
   </script>
 </body>
 </html>
